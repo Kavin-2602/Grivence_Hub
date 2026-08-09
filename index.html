@@ -1,0 +1,1772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CMS AI Complaint Desk - Student Portal | CMSCE</title>
+  <meta name="description" content="AI-Powered Student Complaint Management Portal for CMS College of Engineering. Report campus issues, track live SLA countdowns, and review AI department routing.">
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cms: {
+              green: '#084325',      /* Dark Forest Green for Header/Nav */
+              gold: '#EAB308',       /* Accent Gold/Yellow for Scores & Badges */
+              bg: '#F8FAFC',         /* Clean light off-white background */
+              critical: '#DC2626',   /* Critical Priority Red */
+              warning: '#F59E0B',    /* High/Medium Priority Yellow */
+              resolved: '#10B981'    /* Resolved / Low Green */
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18 & Babel CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #F8FAFC;
+      color: #1E293B;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F1F5F9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+
+    /* Keyframe Animations */
+    @keyframes subtlePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.88; transform: scale(1.02); }
+    }
+    .animate-subtle-pulse {
+      animation: subtlePulse 2.5s infinite ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.25s ease-out forwards;
+    }
+
+    /* Modal Backdrop */
+    .modal-backdrop {
+      background-color: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+<body class="bg-cms-bg text-slate-800 antialiased min-h-screen flex flex-col justify-between">
+  
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // --- NATIVE REACT LUCIDE SVG ICON COMPONENT ---
+    const LucideIcon = ({ name, className = "w-4 h-4", fill = "none", stroke = "currentColor", strokeWidth = 2, ...props }) => {
+      const iconPaths = {
+        'check': <path d="M20 6 9 17l-5-5" />,
+        'check-circle': <g><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></g>,
+        'star': <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />,
+        'clock': <g><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></g>,
+        'sparkles': <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />,
+        'cpu': <g><rect width="16" height="16" x="4" y="4" rx="2" /><rect width="6" height="6" x="9" y="9" rx="1" /><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2" /></g>,
+        'building-2': <g><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" /><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" /><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" /><path d="M10 6h4M10 10h4M10 14h4M10 18h4" /></g>,
+        'building': <g><rect width="16" height="20" x="4" y="2" rx="2" ry="2" /><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01" /></g>,
+        'camera': <g><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></g>,
+        'user': <g><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></g>,
+        'user-plus': <g><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" x2="19" y1="8" y2="14" /><line x1="16" x2="22" y1="11" y2="11" /></g>,
+        'lock': <g><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></g>,
+        'eye': <g><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></g>,
+        'eye-off': <g><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" x2="22" y1="2" y2="22" /></g>,
+        'mail': <g><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></g>,
+        'id-card': <g><rect width="18" height="14" x="3" y="5" rx="2" /><circle cx="9" cy="11" r="2" /><path d="M15 11h2M15 15h2M7 17v-1a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v1" /></g>,
+        'shield-check': <g><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></g>,
+        'x': <path d="M18 6 6 18M6 6l12 12" />,
+        'alert-circle': <g><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></g>,
+        'alert-triangle': <g><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" x2="12" y1="9" y2="13" /><line x1="12" x2="12.01" y1="17" y2="17" /></g>,
+        'send': <path d="m22 2-7 20-4-9-9-4Z M22 2 11 13" />,
+        'key': <g><circle cx="7.5" cy="15.5" r="5.5" /><path d="m21 2-9.6 9.6M15.5 7.5l3 3M18.5 4.5l3 3" /></g>,
+        'arrow-left': <path d="m12 19-7-7 7-7M19 12H5" />,
+        'arrow-right': <path d="M5 12h14M12 5l7 7-7 7" />,
+        'plus': <path d="M5 12h14M12 5v14" />,
+        'plus-circle': <g><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="16" /><line x1="8" x2="16" y1="12" y2="12" /></g>,
+        'utensils': <g><path d="M18 2v6a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3V2M12 2v20M6 2v4M18 2v4" /></g>,
+        'bus': <g><path d="M8 6v6M16 6v6M2 12h20M4 18h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2Z" /><path d="M6 18v2M18 18v2" /></g>,
+        'home': <g><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></g>,
+        'trophy': <g><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16M12 15V22M6 2C6 2 6 13 12 13C18 13 18 2 18 2H6Z" /></g>,
+        'book-open': <g><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></g>,
+        'git-commit': <g><circle cx="12" cy="12" r="4" /><line x1="1.05" x2="8" y1="12" y2="12" /><line x1="16" x2="22.95" y1="12" y2="12" /></g>,
+        'thumbs-up': <path d="M7 10v12M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z" />,
+        'rotate-ccw': <g><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></g>,
+        'search': <g><circle cx="11" cy="11" r="8" /><line x1="21" x2="16.65" y1="21" y2="16.65" /></g>,
+        'calendar': <g><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></g>,
+        'chevron-right': <path d="m9 18 6-6-6-6" />,
+        'chevron-down': <path d="m6 9 6 6 6-6" />,
+        'bell': <g><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></g>,
+        'activity': <path d="M22 12h-4l-3 9L9 3l-3 9H2" />,
+        'list-checks': <g><path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8" /></g>,
+        'layers': <polygon points="12 2 2 7 12 12 22 7 12 2" />,
+        'folder': <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L8.6 3.3A2 2 0 0 0 6.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />,
+        'log-in': <g><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" x2="3" y1="12" y2="12" /></g>,
+        'key-round': <g><circle cx="10" cy="10" r="7" /><path d="m15 15 6 6M18 18l3-3" /></g>,
+        'file-text': <g><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><line x1="16" x2="8" y1="13" y2="13" /><line x1="16" x2="8" y1="17" y2="17" /><line x1="10" x2="8" y1="9" y2="9" /></g>,
+        'zap': <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />,
+        'info': <g><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="16" y2="12" /><line x1="12" x2="12.01" y1="8" y2="8" /></g>
+      };
+
+      return (
+        <svg 
+          viewBox="0 0 24 24" 
+          fill={fill} 
+          stroke={stroke} 
+          strokeWidth={strokeWidth} 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+          className={`shrink-0 ${className}`} 
+          {...props}
+        >
+          {iconPaths[name] || <circle cx="12" cy="12" r="8" />}
+        </svg>
+      );
+    };
+
+    // --- EXACT USER CMS LOTUS LOGO COMPONENT ---
+    // Uses the EXACT uploaded logo image file cms_lotus_logo.jpg
+    const CMSLotusLogo = ({ size = "md", className = "" }) => {
+      const dimensions = {
+        sm: "w-8 h-8",
+        md: "w-10 h-10",
+        lg: "w-14 h-14",
+        xl: "w-20 h-20"
+      }[size] || "w-10 h-10";
+
+      return (
+        <div className={`${dimensions} ${className} shrink-0 relative flex items-center justify-center bg-white rounded-xl p-1 shadow-sm border border-slate-100 transition-transform duration-200 hover:scale-105 overflow-hidden`}>
+          <img 
+            src="cms_lotus_logo.jpg" 
+            alt="CMS Lotus Logo" 
+            className="w-full h-full object-contain mix-blend-multiply"
+          />
+        </div>
+      );
+    };
+
+    // --- REUSABLE HEADER NAVIGATION ---
+    const HeaderNav = ({ 
+      activeScreen, 
+      setActiveScreen, 
+      unreadCount, 
+      toggleNotificationDrawer, 
+      studentName = "Arjun Kumar", 
+      regNo = "CMSCE21CS045" 
+    }) => {
+      const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+      return (
+        <header className="bg-cms-green text-white shadow-md sticky top-0 z-40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            
+            {/* Left Brand Area */}
+            <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveScreen('home')}>
+              <CMSLotusLogo size="md" />
+              <div className="flex flex-col">
+                <div className="flex items-center space-x-2">
+                  <span className="font-extrabold text-lg tracking-tight text-white">CMS</span>
+                  <span className="bg-cms-gold text-slate-900 text-xs px-2 py-0.5 rounded font-bold uppercase tracking-wider">AI Desk</span>
+                </div>
+                <span className="text-[11px] text-emerald-100 font-medium hidden sm:inline-block leading-none mt-0.5">
+                  CMS College of Engineering
+                </span>
+              </div>
+            </div>
+
+            {/* Desktop Navigation Links */}
+            <nav className="hidden md:flex items-center space-x-1">
+              <button 
+                onClick={() => setActiveScreen('home')}
+                className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center space-x-1.5 ${
+                  activeScreen === 'home' 
+                    ? 'bg-white/15 text-white shadow-inner' 
+                    : 'text-emerald-100 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <LucideIcon name="plus-circle" className="w-4 h-4" />
+                <span>File Complaint</span>
+              </button>
+
+              <button 
+                onClick={() => setActiveScreen('tracker')}
+                className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center space-x-1.5 ${
+                  activeScreen === 'tracker' 
+                    ? 'bg-white/15 text-white shadow-inner' 
+                    : 'text-emerald-100 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <LucideIcon name="activity" className="w-4 h-4" />
+                <span>Active Ticket #1042</span>
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+              </button>
+
+              <button 
+                onClick={() => setActiveScreen('my-complaints')}
+                className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center space-x-1.5 ${
+                  activeScreen === 'my-complaints' 
+                    ? 'bg-white/15 text-white shadow-inner' 
+                    : 'text-emerald-100 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <LucideIcon name="list-checks" className="w-4 h-4" />
+                <span>My Complaints</span>
+              </button>
+            </nav>
+
+            {/* Right Action Icons & Profile */}
+            <div className="flex items-center space-x-3">
+              {/* Screen Switcher Dropdown */}
+              <div className="relative">
+                <button 
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="bg-emerald-900/80 hover:bg-emerald-900 text-emerald-100 text-xs px-2.5 py-1.5 rounded border border-emerald-700/60 flex items-center space-x-1 font-medium transition-all"
+                >
+                  <LucideIcon name="layers" className="w-3.5 h-3.5 text-cms-gold" />
+                  <span className="hidden sm:inline">Switch Screen</span>
+                  <LucideIcon name="chevron-down" className="w-3 h-3" />
+                </button>
+
+                {isMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-200 py-2 z-50 text-xs animate-fade-in">
+                    <div className="px-3 py-1 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                      Authentication Views
+                    </div>
+                    <button onClick={() => { setActiveScreen('login'); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center space-x-2 font-medium">
+                      <LucideIcon name="log-in" className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Login Portal</span>
+                    </button>
+                    <button onClick={() => { setActiveScreen('register'); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center space-x-2 font-medium">
+                      <LucideIcon name="user-plus" className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Student Registration</span>
+                    </button>
+                    <button onClick={() => { setActiveScreen('forgot-password'); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center space-x-2 font-medium">
+                      <LucideIcon name="key-round" className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Forgot Password</span>
+                    </button>
+                    <div className="px-3 py-1 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-t border-slate-100 mt-1">
+                      Portal Workflows
+                    </div>
+                    <button onClick={() => { setActiveScreen('home'); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center space-x-2 font-medium">
+                      <LucideIcon name="plus-circle" className="w-3.5 h-3.5 text-cms-green" />
+                      <span>Complaint Filing Desk</span>
+                    </button>
+                    <button onClick={() => { setActiveScreen('tracker'); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center space-x-2 font-medium">
+                      <LucideIcon name="clock" className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Ticket Tracker (#1042)</span>
+                    </button>
+                    <button onClick={() => { setActiveScreen('my-complaints'); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center space-x-2 font-medium">
+                      <LucideIcon name="folder" className="w-3.5 h-3.5 text-slate-500" />
+                      <span>My Complaints List</span>
+                    </button>
+                    <button onClick={() => { setActiveScreen('profile'); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center space-x-2 font-medium">
+                      <LucideIcon name="user" className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Student Profile</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Notification Bell */}
+              <button 
+                onClick={toggleNotificationDrawer}
+                className="relative p-2 rounded-full text-emerald-100 hover:text-white hover:bg-white/10 transition-colors"
+                title="Notifications Drawer"
+              >
+                <LucideIcon name="bell" className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-cms-gold text-slate-900 font-extrabold text-[10px] rounded-full flex items-center justify-center border border-cms-green shadow">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* User Profile Pill */}
+              <div 
+                onClick={() => setActiveScreen('profile')}
+                className="flex items-center space-x-2 bg-emerald-950/70 hover:bg-emerald-950 border border-emerald-700/60 px-3 py-1.5 rounded-full cursor-pointer transition-all"
+              >
+                <div className="w-7 h-7 rounded-full bg-cms-gold text-slate-900 font-extrabold text-xs flex items-center justify-center shadow-sm">
+                  AK
+                </div>
+                <div className="hidden lg:flex flex-col text-left">
+                  <span className="text-xs font-bold leading-tight text-white">{studentName}</span>
+                  <span className="text-[10px] text-emerald-200 leading-none">{regNo}</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </header>
+      );
+    };
+
+    // --- STUDENT REGISTRATION SCREEN ---
+    const RegisterScreen = ({ setActiveScreen }) => {
+      const [fullName, setFullName] = useState("Arjun Kumar");
+      const [email, setEmail] = useState("yourname@cmsce.edu.in");
+      const [regNo, setRegNo] = useState("CMSCE21CS045");
+      const [password, setPassword] = useState("ArjunPass123!");
+      const [confirmPassword, setConfirmPassword] = useState("ArjunPass123!");
+      const [showPassword, setShowPassword] = useState(false);
+      const [registered, setRegistered] = useState(false);
+
+      const getStrength = (pass) => {
+        if (!pass) return { score: 0, label: "Empty", color: "bg-slate-200" };
+        if (pass.length < 6) return { score: 1, label: "Weak", color: "bg-red-500" };
+        if (pass.length < 9) return { score: 2, label: "Moderate", color: "bg-amber-500" };
+        return { score: 3, label: "Strong", color: "bg-emerald-500" };
+      };
+
+      const strength = getStrength(password);
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        setRegistered(true);
+        setTimeout(() => {
+          setActiveScreen('home');
+        }, 1200);
+      };
+
+      return (
+        <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-center items-center px-4 py-8 bg-cms-bg">
+          
+          {/* Header Banner with Exact Lotus Logo */}
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center space-x-3 mb-2">
+              <CMSLotusLogo size="lg" />
+              <div className="text-left">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-cms-green tracking-tight">CMS AI Complaint Desk</h1>
+                <p className="text-xs sm:text-sm font-medium text-slate-500">Student Registration Portal</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Central Card Form */}
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 p-6 sm:p-8">
+            <div className="border-b border-slate-100 pb-4 mb-6">
+              <h2 className="text-xl font-bold text-slate-800">Create Student Account</h2>
+              <p className="text-xs text-slate-500 mt-1">Register using your official CMS College student credentials.</p>
+            </div>
+
+            {registered ? (
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-6 text-center animate-fade-in">
+                <div className="w-12 h-12 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-3">
+                  <LucideIcon name="check" className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold">Account Created Successfully!</h3>
+                <p className="text-xs text-emerald-600 mt-1">Redirecting to Student Complaint Filing Desk...</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                
+                {/* Full Name */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Full Name</label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <LucideIcon name="user" className="w-4 h-4" />
+                    </span>
+                    <input 
+                      type="text" 
+                      required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="e.g. Arjun Kumar"
+                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cms-green focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* College Email ID */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">College Email ID</label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <LucideIcon name="mail" className="w-4 h-4" />
+                    </span>
+                    <input 
+                      type="email" 
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="yourname@cmsce.edu.in"
+                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cms-green focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Registration Number */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Registration Number</label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <LucideIcon name="id-card" className="w-4 h-4" />
+                    </span>
+                    <input 
+                      type="text" 
+                      required
+                      value={regNo}
+                      onChange={(e) => setRegNo(e.target.value)}
+                      placeholder="e.g. CMSCE21CS045"
+                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm uppercase font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-cms-green focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Password Field */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password</label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <LucideIcon name="lock" className="w-4 h-4" />
+                    </span>
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-9 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cms-green focus:bg-white"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                    >
+                      <LucideIcon name={showPassword ? "eye-off" : "eye"} className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Password Strength Indicator */}
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-slate-600 mb-1">
+                      <span>Password Strength:</span>
+                      <span className={`font-bold ${strength.score === 3 ? 'text-emerald-600' : strength.score === 2 ? 'text-amber-600' : 'text-red-500'}`}>
+                        {strength.label}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                      <div className={`h-full transition-all duration-300 ${strength.score >= 1 ? strength.color : 'bg-transparent'}`} style={{ width: '33.3%' }}></div>
+                      <div className={`h-full transition-all duration-300 border-l border-white ${strength.score >= 2 ? strength.color : 'bg-transparent'}`} style={{ width: '33.3%' }}></div>
+                      <div className={`h-full transition-all duration-300 border-l border-white ${strength.score >= 3 ? strength.color : 'bg-transparent'}`} style={{ width: '33.4%' }}></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Confirm Password */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Confirm Password</label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <LucideIcon name="check-circle" className="w-4 h-4" />
+                    </span>
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cms-green focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* CTA Button */}
+                <button 
+                  type="submit"
+                  className="w-full mt-2 py-3 bg-cms-green hover:bg-emerald-900 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-900/20 transition-all flex items-center justify-center space-x-2 active:scale-[0.99]"
+                >
+                  <span>Create Student Account</span>
+                  <LucideIcon name="arrow-right" className="w-4 h-4" />
+                </button>
+
+              </form>
+            )}
+
+            {/* Bottom Redirection Link */}
+            <div className="mt-6 pt-4 border-t border-slate-100 text-center">
+              <p className="text-xs text-slate-600">
+                Already registered?{' '}
+                <button 
+                  onClick={() => setActiveScreen('login')}
+                  className="font-bold text-cms-green hover:underline"
+                >
+                  Log in to your account
+                </button>
+              </p>
+            </div>
+          </div>
+
+        </div>
+      );
+    };
+
+    // --- LOGIN SCREEN ---
+    const LoginScreen = ({ setActiveScreen }) => {
+      const [email, setEmail] = useState("yourname@cmsce.edu.in");
+      const [password, setPassword] = useState("ArjunPass123!");
+      const [showErrorBanner, setShowErrorBanner] = useState(true);
+
+      const handleLogin = (e) => {
+        e.preventDefault();
+        setActiveScreen('home');
+      };
+
+      return (
+        <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-center items-center px-4 py-8 bg-cms-bg">
+          
+          {/* Header Banner */}
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center space-x-3 mb-2">
+              <CMSLotusLogo size="lg" />
+              <div className="text-left">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-cms-green tracking-tight">CMS AI Complaint Desk</h1>
+                <p className="text-xs sm:text-sm font-medium text-slate-500">Student & Staff Login Portal</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Login Card */}
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 p-6 sm:p-8">
+            <div className="border-b border-slate-100 pb-4 mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Student Login</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Enter your credentials to access the portal.</p>
+              </div>
+              <span className="w-8 h-8 rounded-full bg-emerald-100 text-cms-green flex items-center justify-center">
+                <LucideIcon name="shield-check" className="w-5 h-5" />
+              </span>
+            </div>
+
+            {/* Error State Banner */}
+            {showErrorBanner && (
+              <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-3.5 flex items-start justify-between text-red-700">
+                <div className="flex items-start space-x-2.5">
+                  <LucideIcon name="alert-circle" className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider">Authentication Error</h4>
+                    <p className="text-xs mt-0.5">Incorrect email or password. Please verify your details.</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowErrorBanner(false)}
+                  className="text-red-400 hover:text-red-600"
+                >
+                  <LucideIcon name="x" className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              {/* Email */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Email Address</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <LucideIcon name="mail" className="w-4 h-4" />
+                  </span>
+                  <input 
+                    type="email" 
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="yourname@cmsce.edu.in"
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cms-green focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Password</label>
+                  <button 
+                    type="button" 
+                    onClick={() => setActiveScreen('forgot-password')}
+                    className="text-xs text-cms-green hover:underline font-semibold"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <LucideIcon name="lock" className="w-4 h-4" />
+                  </span>
+                  <input 
+                    type="password" 
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cms-green focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Demo Error Toggle Button */}
+              <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={showErrorBanner} 
+                    onChange={(e) => setShowErrorBanner(e.target.checked)}
+                    className="rounded text-cms-green focus:ring-cms-green" 
+                  />
+                  <span>Simulate Error State Banner</span>
+                </label>
+              </div>
+
+              {/* Log In Button */}
+              <button 
+                type="submit"
+                className="w-full py-3 bg-cms-green hover:bg-emerald-900 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-900/20 transition-all flex items-center justify-center space-x-2 active:scale-[0.99]"
+              >
+                <LucideIcon name="log-in" className="w-4 h-4" />
+                <span>Log In</span>
+              </button>
+            </form>
+
+            <div className="mt-6 pt-4 border-t border-slate-100 text-center">
+              <p className="text-xs text-slate-600">
+                New here?{' '}
+                <button 
+                  onClick={() => setActiveScreen('register')}
+                  className="font-bold text-cms-green hover:underline"
+                >
+                  Create an account
+                </button>
+              </p>
+            </div>
+
+          </div>
+        </div>
+      );
+    };
+
+    // --- FORGOT PASSWORD SCREEN ---
+    const ForgotPasswordScreen = ({ setActiveScreen }) => {
+      const [email, setEmail] = useState("yourname@cmsce.edu.in");
+      const [sent, setSent] = useState(false);
+
+      const handleReset = (e) => {
+        e.preventDefault();
+        setSent(true);
+      };
+
+      return (
+        <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-center items-center px-4 py-8 bg-cms-bg">
+          
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center space-x-3 mb-2">
+              <CMSLotusLogo size="lg" />
+              <div className="text-left">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-cms-green tracking-tight">Forgot Password</h1>
+                <p className="text-xs sm:text-sm font-medium text-slate-500">AI Credentials Desk</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 p-6 sm:p-8">
+            <h2 className="text-xl font-bold text-slate-800">Reset your password</h2>
+            <p className="text-xs text-slate-500 mt-1 mb-6">
+              Enter your registered college email address and we'll send an AI verification security code to reset your account password.
+            </p>
+
+            {sent ? (
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-5 text-center">
+                <div className="w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-2">
+                  <LucideIcon name="send" className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-sm">Verification Code Sent!</h3>
+                <p className="text-xs text-emerald-700 mt-1">Please check your college inbox at <strong>{email}</strong>.</p>
+                <button 
+                  onClick={() => setActiveScreen('login')}
+                  className="mt-4 text-xs font-bold text-cms-green hover:underline"
+                >
+                  Return to Login
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleReset} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">College Email ID</label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <LucideIcon name="mail" className="w-4 h-4" />
+                    </span>
+                    <input 
+                      type="email" 
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="yourname@cmsce.edu.in"
+                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cms-green focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  type="submit"
+                  className="w-full py-3 bg-cms-green hover:bg-emerald-900 text-white font-bold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2"
+                >
+                  <LucideIcon name="key" className="w-4 h-4" />
+                  <span>Send Verification Code</span>
+                </button>
+              </form>
+            )}
+
+            <div className="mt-6 pt-4 border-t border-slate-100 text-center">
+              <button 
+                onClick={() => setActiveScreen('login')}
+                className="text-xs font-semibold text-slate-600 hover:text-cms-green flex items-center justify-center space-x-1 mx-auto"
+              >
+                <LucideIcon name="arrow-left" className="w-3.5 h-3.5" />
+                <span>Back to Login</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      );
+    };
+
+    // --- COMPLAINT CREATION MAIN DESK ---
+    const ComplaintDeskScreen = ({ onOpenRoutingModal, setActiveScreen }) => {
+      const [issueText, setIssueText] = useState("Piece of metal found in Block C lunch today");
+      const [isAnonymous, setIsAnonymous] = useState(false);
+      const [attachedPhoto, setAttachedPhoto] = useState(true);
+
+      const handleSampleClick = () => {
+        setIssueText("Piece of metal found in Block C lunch today");
+      };
+
+      return (
+        <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-6">
+          
+          {/* Welcome Header */}
+          <div className="bg-gradient-to-r from-cms-green via-emerald-900 to-slate-900 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
+            <div className="absolute -right-6 -bottom-6 opacity-10">
+              <CMSLotusLogo size="xl" />
+            </div>
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center space-x-2 text-cms-gold text-xs font-bold uppercase tracking-widest">
+                  <LucideIcon name="sparkles" className="w-4 h-4" />
+                  <span>AI-Powered Campus Assistant</span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">Hello, Arjun 👋</h1>
+                <p className="text-emerald-100 text-xs sm:text-sm mt-1 max-w-xl">
+                  Report institutional or campus issues. Our AI instantly analyzes, categorizes, and routes your complaint directly to the responsible college department.
+                </p>
+              </div>
+
+              <button 
+                onClick={() => setActiveScreen('tracker')}
+                className="bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs px-3.5 py-2 rounded-xl font-bold flex items-center space-x-2 self-start sm:self-center transition-all"
+              >
+                <LucideIcon name="clock" className="w-4 h-4 text-cms-gold" />
+                <span>Track Ticket #1042</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Main Complaint Creation Card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 sm:p-8 space-y-6">
+            
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-bold text-slate-800">
+                  What institutional or campus issue would you like to report?
+                </label>
+                <button 
+                  onClick={handleSampleClick}
+                  className="text-xs text-cms-green font-bold hover:underline flex items-center space-x-1"
+                  title="Load Canonical Demo Complaint"
+                >
+                  <LucideIcon name="sparkles" className="w-3.5 h-3.5 text-cms-gold" />
+                  <span>Load Sample Issue</span>
+                </button>
+              </div>
+
+              <textarea 
+                rows="4"
+                value={issueText}
+                onChange={(e) => setIssueText(e.target.value)}
+                placeholder="Describe the problem clearly (e.g. hygiene hazard in canteen, broken lab equipment, water leak in hostel)..."
+                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cms-green focus:bg-white transition-all"
+              ></textarea>
+            </div>
+
+            {/* AI Analysis Live Card */}
+            <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-emerald-200/60 pb-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-7 h-7 rounded-lg bg-cms-green text-cms-gold flex items-center justify-center shadow-sm">
+                    <LucideIcon name="cpu" className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-cms-green">AI Categorization & Analysis</h3>
+                    <p className="text-[11px] text-slate-500">Real-time NLP engine intent prediction</p>
+                  </div>
+                </div>
+
+                <span className="bg-cms-gold text-slate-900 font-extrabold text-xs px-2.5 py-1 rounded-full flex items-center space-x-1 shadow-sm">
+                  <LucideIcon name="zap" className="w-3.5 h-3.5" />
+                  <span>Critical 97% Match</span>
+                </span>
+              </div>
+
+              {/* Dynamic Badge & Auto-Assigned Dept */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white rounded-lg p-3.5 border border-emerald-100 flex items-center space-x-3">
+                  <span className="w-3 h-3 rounded-full bg-cms-critical animate-ping"></span>
+                  <div>
+                    <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-400 block">Category Detected</span>
+                    <span className="text-sm font-bold text-slate-800">CATEGORY: Food / Safety Hazard</span>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-3.5 border border-emerald-100 flex items-center space-x-3">
+                  <LucideIcon name="building-2" className="w-5 h-5 text-cms-green" />
+                  <div>
+                    <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-400 block">Auto-Assigned Department</span>
+                    <span className="text-sm font-bold text-cms-green">Canteen Department</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Photo Upload & Anonymous Toggle Controls */}
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-100">
+              
+              <div className="flex items-center space-x-3">
+                <button 
+                  onClick={() => setAttachedPhoto(!attachedPhoto)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold border flex items-center space-x-2 transition-all ${
+                    attachedPhoto 
+                      ? 'bg-emerald-100 text-cms-green border-emerald-300' 
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  <LucideIcon name="camera" className="w-4 h-4" />
+                  <span>{attachedPhoto ? "Photo Attached (1)" : "Add Photo Optional"}</span>
+                </button>
+
+                {attachedPhoto && (
+                  <div className="relative group">
+                    <img 
+                      src="https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=150&auto=format&fit=crop&q=80" 
+                      alt="Complaint Preview" 
+                      className="w-10 h-10 rounded-lg object-cover border border-slate-300 shadow-sm"
+                    />
+                    <button 
+                      onClick={() => setAttachedPhoto(false)}
+                      className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Submit Anonymously Toggle */}
+              <label className="flex items-center space-x-2 cursor-pointer bg-slate-50 hover:bg-slate-100 px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700">
+                <input 
+                  type="checkbox" 
+                  checked={isAnonymous}
+                  onChange={(e) => setIsAnonymous(e.target.checked)}
+                  className="rounded text-cms-green focus:ring-cms-green w-4 h-4" 
+                />
+                <span>Submit anonymously</span>
+              </label>
+
+            </div>
+
+            {/* CTA Button */}
+            <div className="pt-4">
+              <button 
+                onClick={onOpenRoutingModal}
+                className="w-full py-4 bg-cms-green hover:bg-emerald-900 text-white font-extrabold text-base rounded-xl shadow-xl shadow-emerald-900/20 transition-all flex items-center justify-center space-x-2 active:scale-[0.99]"
+              >
+                <LucideIcon name="cpu" className="w-5 h-5 text-cms-gold" />
+                <span>Analyze & Submit</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      );
+    };
+
+    // --- AI ROUTING REVIEW MODAL / DRAWER ---
+    const AIRoutingModal = ({ isOpen, onClose, onConfirm }) => {
+      const [selectedDept, setSelectedDept] = useState("Canteen");
+
+      if (!isOpen) return null;
+
+      const departments = [
+        { id: "Canteen", label: "Canteen Department", icon: "utensils", desc: "Food hygiene, kitchen safety & meal quality", isAI: true },
+        { id: "Transport", label: "Transport Office", icon: "bus", desc: "Bus timing, route issues & driver conduct", isAI: false },
+        { id: "Hostel", label: "Hostel Office", icon: "home", desc: "Room allocation, water supply & block warden", isAI: false },
+        { id: "Sports", label: "Sports Department", icon: "trophy", desc: "Ground maintenance, equipment & tournaments", isAI: false },
+        { id: "Academic", label: "Academic Affairs", icon: "book-open", desc: "Classrooms, labs, timetables & faculty desk", isAI: false },
+        { id: "Hospitality", label: "Hospitality & Sanitation", icon: "sparkles", desc: "Campus cleanliness, restrooms & waste disposal", isAI: false }
+      ];
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header with Lotus Logo */}
+            <div className="bg-cms-green text-white p-4 sm:p-5 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <CMSLotusLogo size="md" />
+                <div>
+                  <h2 className="text-base sm:text-lg font-extrabold leading-tight">Confirm Department</h2>
+                  <p className="text-xs text-emerald-200">AI Routing Review Desk</p>
+                </div>
+              </div>
+              <button 
+                onClick={onClose}
+                className="text-emerald-200 hover:text-white p-1 rounded-lg hover:bg-white/10"
+              >
+                <LucideIcon name="x" className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content Scrollable */}
+            <div className="p-5 sm:p-6 overflow-y-auto space-y-6">
+              
+              {/* AI Suggestion Banner */}
+              <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/20 to-emerald-500/10 border-2 border-cms-gold rounded-xl p-4 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-full bg-cms-gold text-slate-900 flex items-center justify-center font-extrabold shadow-md">
+                    97%
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-600 block">AI Recommended Target</span>
+                    <h4 className="text-base font-extrabold text-slate-900">Canteen Department</h4>
+                  </div>
+                </div>
+
+                <span className="bg-cms-gold text-slate-900 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider shadow">
+                  97% CONFIDENCE SCORE
+                </span>
+              </div>
+
+              {/* Department Selector Grid */}
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
+                  Select or Override Department (Canonical 6 Department Grid)
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {departments.map((dept) => {
+                    const isSelected = selectedDept === dept.id;
+                    return (
+                      <div
+                        key={dept.id}
+                        onClick={() => setSelectedDept(dept.id)}
+                        className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-start space-x-3 ${
+                          isSelected 
+                            ? 'border-cms-green bg-emerald-50/60 shadow-md ring-2 ring-cms-green/20' 
+                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className={`p-2 rounded-lg ${isSelected ? 'bg-cms-green text-white' : 'bg-slate-100 text-slate-600'}`}>
+                          <LucideIcon name={dept.icon} className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h5 className={`text-xs font-bold ${isSelected ? 'text-cms-green' : 'text-slate-800'}`}>
+                              {dept.label}
+                            </h5>
+                            {dept.isAI && (
+                              <span className="text-[9px] bg-cms-gold text-slate-900 font-extrabold px-1.5 py-0.5 rounded">
+                                AI Match
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 truncate mt-0.5">{dept.desc}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Modal Actions */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end space-x-3">
+              <button 
+                onClick={onClose}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={onConfirm}
+                className="px-6 py-2.5 rounded-xl text-xs font-extrabold bg-cms-green hover:bg-emerald-900 text-white shadow-lg flex items-center space-x-2 transition-all"
+              >
+                <span>Confirm & Submit Ticket</span>
+                <LucideIcon name="check" className="w-4 h-4" />
+              </button>
+            </div>
+
+          </div>
+        </div>
+      );
+    };
+
+    // --- ACTIVE TICKET TRACKING SCREEN (#1042) ---
+    const TicketTrackerScreen = ({ setActiveScreen }) => {
+      const [stages, setStages] = useState([
+        { id: 1, name: "Submitted", time: "Aug 9, 2026 09:14 AM", status: "completed", desc: "Ticket logged via Student AI Desk" },
+        { id: 2, name: "AI Categorized", time: "Aug 9, 2026 09:14 AM", status: "completed", desc: "Food Safety Critical Priority (97% Match)" },
+        { id: 3, name: "Assigned", time: "Aug 9, 2026 09:20 AM", status: "completed", desc: "Canteen Department Head: Dr. Mehra" },
+        { id: 4, name: "In Progress", time: "Aug 9, 2026 10:05 AM", status: "active", desc: "Investigation underway CCTV & kitchen inspection" },
+        { id: 5, name: "Resolved", time: "Pending", status: "pending", desc: "Kitchen audit complete. Action taken." }
+      ]);
+
+      const [rating, setRating] = useState(4);
+      const [hoverRating, setHoverRating] = useState(0);
+      const [feedbackComment, setFeedbackComment] = useState("The issue was fixed promptly, kitchen inspected.");
+      const [selectedTags, setSelectedTags] = useState(["Quick Response", "Satisfactory Fix"]);
+      const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+
+      const isResolved = stages.find(s => s.id === 5)?.status === "completed";
+
+      const toggleResolved = () => {
+        setStages(prevStages => prevStages.map(s => {
+          if (s.id === 4) return { ...s, status: isResolved ? "active" : "completed" };
+          if (s.id === 5) return { ...s, status: isResolved ? "pending" : "completed", time: isResolved ? "Pending" : "Aug 9, 2026 02:30 PM" };
+          return s;
+        }));
+      };
+
+      const toggleTag = (tag) => {
+        if (selectedTags.includes(tag)) {
+          setSelectedTags(selectedTags.filter(t => t !== tag));
+        } else {
+          setSelectedTags([...selectedTags, tag]);
+        }
+      };
+
+      const handleFeedbackSubmit = (e) => {
+        e.preventDefault();
+        setFeedbackSubmitted(true);
+      };
+
+      const handleReopen = () => {
+        setStages(prevStages => prevStages.map(s => {
+          if (s.id === 4) return { ...s, status: "active", desc: "Reopened by student for further verification" };
+          if (s.id === 5) return { ...s, status: "pending", time: "Pending" };
+          return s;
+        }));
+        setFeedbackSubmitted(false);
+      };
+
+      return (
+        <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-6">
+          
+          {/* Header Card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="font-mono text-xs font-extrabold text-cms-green bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                    TICKET #1042
+                  </span>
+                  <span className="bg-red-100 text-cms-critical font-bold text-xs px-2.5 py-1 rounded-full uppercase flex items-center space-x-1">
+                    <span className="w-2 h-2 rounded-full bg-cms-critical animate-ping"></span>
+                    <span>Critical Priority</span>
+                  </span>
+                </div>
+                <h1 className="text-xl sm:text-2xl font-extrabold text-slate-800 mt-2">
+                  Complaint #1042 - Canteen Department | Food Quality
+                </h1>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Reported by Arjun Kumar (CMSCE21CS045) on Aug 9, 2026
+                </p>
+              </div>
+
+              {/* SLA Countdown Live Badge */}
+              <div className="bg-slate-900 text-white p-3.5 rounded-xl border border-slate-800 shadow-md animate-subtle-pulse flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-lg bg-cms-gold text-slate-900 flex items-center justify-center font-bold">
+                  <LucideIcon name="clock" className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest block">SLA Live Countdown</span>
+                  <span className="text-sm sm:text-base font-black tracking-wider text-cms-gold">05h 22m remaining</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Complaint Summary details */}
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/80 text-xs text-slate-700 space-y-2">
+              <div className="flex items-start space-x-2">
+                <LucideIcon name="file-text" className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-slate-900">Original Report: </span>
+                  <span>"Piece of metal found in Block C lunch today"</span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-6 text-[11px] text-slate-500 pt-1 border-t border-slate-200/60">
+                <span><strong>Target Dept:</strong> Canteen Department</span>
+                <span><strong>Dept Head:</strong> Dr. Mehra</span>
+                <span><strong>Target SLA:</strong> 12 Hours</span>
+              </div>
+            </div>
+
+            {/* Toggle Resolution Simulator Button */}
+            <div className="flex items-center justify-between bg-amber-50/80 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+              <div className="flex items-center space-x-2">
+                <LucideIcon name="info" className="w-4 h-4 text-amber-600" />
+                <span className="font-semibold">Interactive Toggle: Switch ticket status between "In Progress" and "Resolved".</span>
+              </div>
+              <button 
+                onClick={toggleResolved}
+                className="px-3.5 py-1.5 bg-cms-green hover:bg-emerald-900 text-white font-bold rounded-lg shadow transition-all text-xs flex items-center space-x-1.5"
+              >
+                <span>{isResolved ? "Reset to In Progress" : "Simulate Status: Resolved"}</span>
+                <LucideIcon name="zap" className="w-3.5 h-3.5 text-cms-gold" />
+              </button>
+            </div>
+
+          </div>
+
+          {/* 5-Stage Progress Tracker Timeline */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+            <h2 className="text-base font-extrabold text-slate-800 flex items-center space-x-2">
+              <LucideIcon name="git-commit" className="w-5 h-5 text-cms-green" />
+              <span>Progress Tracker Timeline (5 Stages)</span>
+            </h2>
+
+            <div className="relative pl-6 border-l-2 border-slate-200 space-y-8 my-4">
+              {stages.map((stg) => {
+                const isDone = stg.status === "completed";
+                const isActive = stg.status === "active";
+
+                return (
+                  <div key={stg.id} className="relative group">
+                    {/* Circle Icon */}
+                    <div className={`absolute -left-[35px] top-0 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
+                      isDone 
+                        ? 'bg-cms-green border-cms-green text-white shadow-md' 
+                        : isActive 
+                        ? 'bg-cms-gold border-slate-900 text-slate-900 ring-4 ring-amber-100 font-extrabold' 
+                        : 'bg-white border-slate-300 text-slate-400'
+                    }`}>
+                      {isDone ? (
+                        <LucideIcon name="check" className="w-4 h-4" />
+                      ) : (
+                        <span className="text-xs font-bold">{stg.id}</span>
+                      )}
+                    </div>
+
+                    <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-200/80 transition-all hover:bg-white hover:shadow-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center space-x-2">
+                          <h4 className={`text-sm font-extrabold ${isDone ? 'text-cms-green' : isActive ? 'text-slate-900' : 'text-slate-500'}`}>
+                            {stg.id}. {stg.name}
+                          </h4>
+                          {isActive && (
+                            <span className="bg-amber-400 text-slate-900 text-[10px] font-black px-2 py-0.5 rounded uppercase">
+                              Active Stage
+                            </span>
+                          )}
+                          {isDone && (
+                            <span className="bg-emerald-100 text-cms-green text-[10px] font-bold px-2 py-0.5 rounded">
+                              Completed
+                            </span>
+                          )}
+                        </div>
+
+                        <span className="text-xs font-medium text-slate-400">{stg.time}</span>
+                      </div>
+                      <p className="text-xs text-slate-600 mt-1">{stg.desc}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* INTERACTIVE RESOLUTION FEEDBACK & STAR RATING SECTION */}
+          {isResolved ? (
+            <div className="bg-white rounded-2xl shadow-xl border-2 border-cms-green p-6 sm:p-8 space-y-6 animate-fade-in">
+              <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Issue Resolved</span>
+                  </div>
+                  <h2 className="text-xl font-extrabold text-slate-800 mt-1">Resolution Feedback & Rating System</h2>
+                  <p className="text-xs text-slate-500">Rate your experience and help us maintain quality institutional standards.</p>
+                </div>
+                <span className="w-10 h-10 bg-emerald-100 text-cms-green rounded-xl flex items-center justify-center font-bold shadow-sm">
+                  <LucideIcon name="star" className="w-6 h-6 fill-cms-gold stroke-cms-gold" />
+                </span>
+              </div>
+
+              {feedbackSubmitted ? (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center text-emerald-800 space-y-3">
+                  <div className="w-12 h-12 bg-cms-green text-cms-gold rounded-full flex items-center justify-center mx-auto shadow-md">
+                    <LucideIcon name="thumbs-up" className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-base font-extrabold">Feedback Submitted Successfully!</h3>
+                  <p className="text-xs text-emerald-700 max-w-md mx-auto">
+                    Thank you for rating your resolution experience ({rating}/5 Stars). Your feedback has been logged for Dean of Student Affairs audit.
+                  </p>
+                  <button 
+                    onClick={() => setFeedbackSubmitted(false)}
+                    className="text-xs font-bold text-cms-green hover:underline pt-2"
+                  >
+                    Edit Feedback Response
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleFeedbackSubmit} className="space-y-6">
+                  
+                  {/* Interactive 5-Star Rating Control */}
+                  <div>
+                    <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2">
+                      Rate Resolution Quality (1 to 5 Stars)
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      {[1, 2, 3, 4, 5].map((star) => {
+                        const filled = (hoverRating || rating) >= star;
+                        return (
+                          <button
+                            key={star}
+                            type="button"
+                            onMouseEnter={() => setHoverRating(star)}
+                            onMouseLeave={() => setHoverRating(0)}
+                            onClick={() => setRating(star)}
+                            className="p-1.5 focus:outline-none transition-transform hover:scale-125"
+                          >
+                            <LucideIcon 
+                              name="star" 
+                              className={`w-8 h-8 ${filled ? 'fill-cms-gold stroke-cms-gold drop-shadow-md' : 'stroke-slate-300 fill-none'}`} 
+                            />
+                          </button>
+                        );
+                      })}
+                      <span className="ml-3 text-sm font-extrabold text-slate-700">
+                        {rating} / 5 Stars
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Quick Feedback Tags */}
+                  <div>
+                    <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2">
+                      Quick Feedback Tags
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {["Quick Response", "Satisfactory Fix", "Needs Improvement", "Polite Staff"].map((tag) => {
+                        const isSelected = selectedTags.includes(tag);
+                        return (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => toggleTag(tag)}
+                            className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all flex items-center space-x-1.5 ${
+                              isSelected 
+                                ? 'bg-cms-green text-white border-cms-green shadow-sm' 
+                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            <LucideIcon name={isSelected ? "check" : "plus"} className="w-3.5 h-3.5" />
+                            <span>{tag}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Feedback Comment Box */}
+                  <div>
+                    <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2">
+                      Feedback Comments
+                    </label>
+                    <textarea 
+                      rows="3"
+                      value={feedbackComment}
+                      onChange={(e) => setFeedbackComment(e.target.value)}
+                      placeholder="Share details regarding the department's resolution performance..."
+                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cms-green focus:bg-white"
+                    ></textarea>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+                    <button 
+                      type="submit"
+                      className="px-6 py-3 bg-cms-green hover:bg-emerald-900 text-white font-extrabold text-sm rounded-xl shadow-lg transition-all flex items-center space-x-2"
+                    >
+                      <LucideIcon name="send" className="w-4 h-4" />
+                      <span>Submit Feedback</span>
+                    </button>
+
+                    <button 
+                      type="button"
+                      onClick={handleReopen}
+                      className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs rounded-xl border border-red-200 transition-all flex items-center space-x-1.5"
+                    >
+                      <LucideIcon name="rotate-ccw" className="w-4 h-4" />
+                      <span>Reopen Issue (Unsatisfied)</span>
+                    </button>
+                  </div>
+
+                </form>
+              )}
+            </div>
+          ) : (
+            <div className="bg-slate-100 border border-slate-200 rounded-2xl p-6 text-center text-slate-500 text-xs">
+              <LucideIcon name="lock" className="w-6 h-6 mx-auto mb-2 text-slate-400" />
+              <span className="font-bold">Resolution Feedback Form Locked</span>
+              <p className="mt-0.5">The feedback rating form will unlock automatically once ticket status is marked "Resolved". Use the button above to simulate resolution.</p>
+            </div>
+          )}
+
+        </div>
+      );
+    };
+
+    // --- MY COMPLAINTS DIRECTORY SCREEN ---
+    const MyComplaintsScreen = ({ setActiveScreen }) => {
+      const [searchTerm, setSearchTerm] = useState("");
+      const [filterStatus, setFilterStatus] = useState("all");
+
+      const complaintsList = [
+        { id: "1042", title: "Piece of metal found in Block C lunch today", dept: "Canteen Department", category: "Food Safety", priority: "Critical", status: "In Progress", sla: "05h 22m remaining", date: "Aug 9, 2026" },
+        { id: "1038", title: "Water leakage in Hostel Block B Restroom 302", dept: "Hostel Office", category: "Sanitation", priority: "Medium", status: "Resolved", sla: "Completed", date: "Aug 6, 2026" },
+        { id: "1025", title: "College Bus Route #4 delayed by 45 minutes", dept: "Transport Office", category: "Transport", priority: "Medium", status: "Resolved", sla: "Completed", date: "Aug 2, 2026" },
+        { id: "1011", title: "Projector flickering in ECE Seminar Hall", dept: "Academic Affairs", category: "Infrastructure", priority: "Low", status: "Resolved", sla: "Completed", date: "Jul 28, 2026" }
+      ];
+
+      const filtered = complaintsList.filter(c => {
+        const matchesSearch = c.title.toLowerCase().includes(searchTerm.toLowerCase()) || c.id.includes(searchTerm);
+        const matchesFilter = filterStatus === "all" || (filterStatus === "active" ? c.status !== "Resolved" : c.status === "Resolved");
+        return matchesSearch && matchesFilter;
+      });
+
+      return (
+        <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8 space-y-6">
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-extrabold text-slate-800">My Complaints Directory</h1>
+              <p className="text-xs text-slate-500 mt-0.5">Track and view history of all filed campus issues.</p>
+            </div>
+
+            <button 
+              onClick={() => setActiveScreen('home')}
+              className="bg-cms-green hover:bg-emerald-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow flex items-center space-x-2 self-start sm:self-auto"
+            >
+              <LucideIcon name="plus" className="w-4 h-4" />
+              <span>File New Complaint</span>
+            </button>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <LucideIcon name="search" className="w-4 h-4" />
+              </span>
+              <input 
+                type="text" 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search ticket # or keyword..."
+                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-cms-green"
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button 
+                onClick={() => setFilterStatus("all")}
+                className={`px-3 py-2 rounded-lg text-xs font-bold ${filterStatus === 'all' ? 'bg-cms-green text-white' : 'bg-slate-100 text-slate-600'}`}
+              >
+                All Tickets
+              </button>
+              <button 
+                onClick={() => setFilterStatus("active")}
+                className={`px-3 py-2 rounded-lg text-xs font-bold ${filterStatus === 'active' ? 'bg-cms-green text-white' : 'bg-slate-100 text-slate-600'}`}
+              >
+                Active
+              </button>
+              <button 
+                onClick={() => setFilterStatus("resolved")}
+                className={`px-3 py-2 rounded-lg text-xs font-bold ${filterStatus === 'resolved' ? 'bg-cms-green text-white' : 'bg-slate-100 text-slate-600'}`}
+              >
+                Resolved
+              </button>
+            </div>
+          </div>
+
+          {/* Complaints List Cards */}
+          <div className="space-y-4">
+            {filtered.map((item) => (
+              <div 
+                key={item.id}
+                onClick={() => setActiveScreen('tracker')}
+                className="bg-white rounded-xl p-5 border border-slate-200 hover:border-cms-green hover:shadow-md transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
+                <div className="space-y-1.5">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-mono text-xs font-extrabold text-cms-green bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      #{item.id}
+                    </span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                      item.priority === 'Critical' ? 'bg-red-100 text-cms-critical' : 'bg-amber-100 text-cms-warning'
+                    }`}>
+                      {item.priority} Priority
+                    </span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                      item.status === 'Resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {item.status}
+                    </span>
+                  </div>
+
+                  <h3 className="text-sm font-bold text-slate-800">{item.title}</h3>
+                  
+                  <div className="flex items-center space-x-4 text-[11px] text-slate-500">
+                    <span className="flex items-center space-x-1"><LucideIcon name="building" className="w-3 h-3 text-slate-400" /><span>{item.dept}</span></span>
+                    <span className="flex items-center space-x-1"><LucideIcon name="calendar" className="w-3 h-3 text-slate-400" /><span>{item.date}</span></span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between sm:justify-end space-x-4 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
+                  <div className="text-right">
+                    <span className="text-[10px] uppercase text-slate-400 font-bold block">SLA Status</span>
+                    <span className="text-xs font-bold text-slate-700">{item.sla}</span>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-cms-green hover:text-white transition-colors">
+                    <LucideIcon name="chevron-right" className="w-4 h-4" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      );
+    };
+
+    // --- STUDENT PROFILE SCREEN ---
+    const ProfileScreen = ({ setActiveScreen }) => {
+      return (
+        <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+            
+            <div className="flex items-center space-x-4 border-b border-slate-100 pb-6">
+              <div className="w-16 h-16 rounded-full bg-cms-green text-cms-gold text-2xl font-black flex items-center justify-center shadow-lg">
+                AK
+              </div>
+              <div>
+                <h1 className="text-2xl font-extrabold text-slate-800">Arjun Kumar</h1>
+                <p className="text-xs font-mono text-cms-green font-bold mt-0.5">Registration No: CMSCE21CS045</p>
+                <p className="text-xs text-slate-500">Department of Computer Science & Engineering</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-slate-400 uppercase font-bold block mb-1">Official Email</span>
+                <span className="font-bold text-slate-800">yourname@cmsce.edu.in</span>
+              </div>
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-slate-400 uppercase font-bold block mb-1">Current Academic Year</span>
+                <span className="font-bold text-slate-800">Final Year (Semester 7)</span>
+              </div>
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-slate-400 uppercase font-bold block mb-1">Active Complaints</span>
+                <span className="font-bold text-cms-green">1 Ticket Active (#1042)</span>
+              </div>
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-slate-400 uppercase font-bold block mb-1">Resolved Complaints</span>
+                <span className="font-bold text-slate-800">3 Tickets Resolved</span>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+              <button 
+                onClick={() => setActiveScreen('home')}
+                className="text-xs font-bold text-cms-green hover:underline flex items-center space-x-1"
+              >
+                <LucideIcon name="arrow-left" className="w-3.5 h-3.5" />
+                <span>Back to Complaint Filing Desk</span>
+              </button>
+
+              <button 
+                onClick={() => setActiveScreen('login')}
+                className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 font-bold text-xs rounded-xl transition-colors"
+              >
+                Log Out
+              </button>
+            </div>
+
+          </div>
+        </div>
+      );
+    };
+
+    // --- NOTIFICATION DRAWER COMPONENT ---
+    const NotificationDrawer = ({ isOpen, onClose, setActiveScreen }) => {
+      if (!isOpen) return null;
+
+      const notifications = [
+        { id: 1, title: "SLA Warning Alert", desc: "SLA expires in 1h 10m for complaint #1042 (Canteen Dept)", time: "10 mins ago", type: "warning" },
+        { id: 2, title: "Status Stage Updated", desc: "Complaint #1042 moved to 'In Progress' by Dr. Mehra", time: "1 hour ago", type: "info" },
+        { id: 3, title: "Complaint Resolved", desc: "Complaint #1038 (Hostel Office) marked resolved", time: "2 days ago", type: "success" }
+      ];
+
+      return (
+        <div className="fixed inset-0 z-50 overflow-hidden modal-backdrop animate-fade-in">
+          <div className="absolute inset-0" onClick={onClose}></div>
+          <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
+            <div className="w-screen max-w-md bg-white shadow-2xl border-l border-slate-200 flex flex-col">
+              
+              {/* Header with Lotus Logo */}
+              <div className="bg-cms-green text-white p-4 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <CMSLotusLogo size="sm" />
+                  <h3 className="font-extrabold text-sm">Notifications Drawer</h3>
+                </div>
+                <button onClick={onClose} className="text-emerald-200 hover:text-white">
+                  <LucideIcon name="x" className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* List */}
+              <div className="p-4 overflow-y-auto space-y-3 flex-1">
+                {notifications.map((n) => (
+                  <div 
+                    key={n.id}
+                    onClick={() => { onClose(); setActiveScreen('tracker'); }}
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                      n.type === 'warning' 
+                        ? 'bg-amber-50 border-amber-200 text-amber-950 hover:bg-amber-100' 
+                        : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-extrabold flex items-center space-x-1">
+                        {n.type === 'warning' && <LucideIcon name="alert-triangle" className="w-3.5 h-3.5 text-amber-600" />}
+                        <span>{n.title}</span>
+                      </span>
+                      <span className="text-[10px] text-slate-400">{n.time}</span>
+                    </div>
+                    <p className="text-xs text-slate-600">{n.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-4 border-t border-slate-100 bg-slate-50 text-center">
+                <button onClick={onClose} className="text-xs font-bold text-cms-green hover:underline">
+                  Close Drawer
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // --- RESPONSIVE BOTTOM NAVIGATION BAR (MOBILE) ---
+    const MobileBottomNav = ({ activeScreen, setActiveScreen, toggleNotificationDrawer }) => {
+      return (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-cms-green text-white border-t border-emerald-900/60 shadow-2xl z-40 px-2 py-1.5 flex items-center justify-around">
+          
+          <button 
+            onClick={() => setActiveScreen('home')}
+            className={`flex flex-col items-center p-1.5 rounded-lg text-[10px] font-bold ${
+              activeScreen === 'home' ? 'text-cms-gold' : 'text-emerald-200 hover:text-white'
+            }`}
+          >
+            <LucideIcon name="plus-circle" className="w-5 h-5 mb-0.5" />
+            <span>File Desk</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveScreen('tracker')}
+            className={`flex flex-col items-center p-1.5 rounded-lg text-[10px] font-bold relative ${
+              activeScreen === 'tracker' ? 'text-cms-gold' : 'text-emerald-200 hover:text-white'
+            }`}
+          >
+            <LucideIcon name="clock" className="w-5 h-5 mb-0.5" />
+            <span>#1042 SLA</span>
+            <span className="absolute top-1 right-3 w-2 h-2 rounded-full bg-cms-gold animate-ping"></span>
+          </button>
+
+          <button 
+            onClick={() => setActiveScreen('my-complaints')}
+            className={`flex flex-col items-center p-1.5 rounded-lg text-[10px] font-bold ${
+              activeScreen === 'my-complaints' ? 'text-cms-gold' : 'text-emerald-200 hover:text-white'
+            }`}
+          >
+            <LucideIcon name="list-checks" className="w-5 h-5 mb-0.5" />
+            <span>Tickets</span>
+          </button>
+
+          <button 
+            onClick={toggleNotificationDrawer}
+            className="flex flex-col items-center p-1.5 rounded-lg text-[10px] font-bold text-emerald-200 hover:text-white"
+          >
+            <LucideIcon name="bell" className="w-5 h-5 mb-0.5" />
+            <span>Alerts</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveScreen('profile')}
+            className={`flex flex-col items-center p-1.5 rounded-lg text-[10px] font-bold ${
+              activeScreen === 'profile' ? 'text-cms-gold' : 'text-emerald-200 hover:text-white'
+            }`}
+          >
+            <LucideIcon name="user" className="w-5 h-5 mb-0.5" />
+            <span>Profile</span>
+          </button>
+
+        </div>
+      );
+    };
+
+    // --- MAIN APPLICATION ENTRY COMPONENT ---
+    const App = () => {
+      const [activeScreen, setActiveScreen] = useState('home');
+      const [isRoutingModalOpen, setIsRoutingModalOpen] = useState(false);
+      const [isNotifDrawerOpen, setIsNotifDrawerOpen] = useState(false);
+      const [unreadCount, setUnreadCount] = useState(1);
+
+      const handleConfirmRouting = () => {
+        setIsRoutingModalOpen(false);
+        setActiveScreen('tracker');
+      };
+
+      const isAuthPage = ['register', 'login', 'forgot-password'].includes(activeScreen);
+
+      return (
+        <div className="min-h-screen flex flex-col justify-between bg-cms-bg pb-16 md:pb-0">
+          
+          {/* Header Navigation */}
+          {!isAuthPage && (
+            <HeaderNav 
+              activeScreen={activeScreen}
+              setActiveScreen={setActiveScreen}
+              unreadCount={unreadCount}
+              toggleNotificationDrawer={() => setIsNotifDrawerOpen(!isNotifDrawerOpen)}
+            />
+          )}
+
+          {/* Main Content Area */}
+          <main className="flex-1">
+            {activeScreen === 'register' && <RegisterScreen setActiveScreen={setActiveScreen} />}
+            {activeScreen === 'login' && <LoginScreen setActiveScreen={setActiveScreen} />}
+            {activeScreen === 'forgot-password' && <ForgotPasswordScreen setActiveScreen={setActiveScreen} />}
+            
+            {activeScreen === 'home' && (
+              <ComplaintDeskScreen 
+                onOpenRoutingModal={() => setIsRoutingModalOpen(true)}
+                setActiveScreen={setActiveScreen}
+              />
+            )}
+            
+            {activeScreen === 'tracker' && <TicketTrackerScreen setActiveScreen={setActiveScreen} />}
+            {activeScreen === 'my-complaints' && <MyComplaintsScreen setActiveScreen={setActiveScreen} />}
+            {activeScreen === 'profile' && <ProfileScreen setActiveScreen={setActiveScreen} />}
+          </main>
+
+          {/* AI Routing Review Modal */}
+          <AIRoutingModal 
+            isOpen={isRoutingModalOpen}
+            onClose={() => setIsRoutingModalOpen(false)}
+            onConfirm={handleConfirmRouting}
+          />
+
+          {/* Notifications Drawer */}
+          <NotificationDrawer 
+            isOpen={isNotifDrawerOpen}
+            onClose={() => setIsNotifDrawerOpen(false)}
+            setActiveScreen={setActiveScreen}
+          />
+
+          {/* Mobile Sticky Bottom Navigation */}
+          {!isAuthPage && (
+            <MobileBottomNav 
+              activeScreen={activeScreen}
+              setActiveScreen={setActiveScreen}
+              toggleNotificationDrawer={() => setIsNotifDrawerOpen(!isNotifDrawerOpen)}
+            />
+          )}
+
+          {/* Footer */}
+          <footer className="bg-slate-900 text-slate-400 text-xs py-4 px-4 text-center border-t border-slate-800">
+            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+              <div className="flex items-center space-x-2">
+                <CMSLotusLogo size="sm" />
+                <span className="font-bold text-slate-200">CMS College of Engineering</span>
+                <span>• AI-Powered Student Portal</span>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                © 2026 CMSCE AI Complaint Desk. All rights reserved.
+              </p>
+            </div>
+          </footer>
+
+        </div>
+      );
+    };
+
+    // Render App
+    const rootElement = document.getElementById('root');
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(<App />);
+  </script>
+</body>
+</html>
