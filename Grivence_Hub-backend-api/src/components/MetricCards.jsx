@@ -1,7 +1,40 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Ticket, AlertTriangle, Clock, Activity, ArrowUp, ArrowDown } from 'lucide-react';
 
-export default function MetricCards() {
+export default function MetricCards({ token }) {
+  const [metrics, setMetrics] = useState({
+    total_open_tickets: 0,
+    critical_escalations: 0,
+    sla_breaches: 0,
+    avg_resolution_time_hours: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  const fetchMetrics = async () => {
+    const activeTok = token || localStorage.getItem('access_token') || localStorage.getItem('token');
+    if (!activeTok) return;
+
+    try {
+      const res = await fetch('/api/v1/admin/dashboard/', {
+        headers: { 'Authorization': `Bearer ${activeTok}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMetrics(data);
+      }
+    } catch (err) {
+      console.warn('Metrics fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMetrics();
+    const interval = setInterval(fetchMetrics, 2000);
+    return () => clearInterval(interval);
+  }, [token]);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-[1600px] mx-auto px-6 py-6">
       
@@ -16,10 +49,12 @@ export default function MetricCards() {
           </div>
         </div>
         <div className="mt-4 flex items-baseline gap-2">
-          <span className="text-3xl font-extrabold text-slate-900">47</span>
+          <span className="text-3xl font-extrabold text-slate-900">
+            {loading ? '...' : metrics.total_open_tickets}
+          </span>
           <span className="inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
             <ArrowUp className="h-3 w-3" />
-            +12 this week
+            Live DB Count
           </span>
         </div>
       </div>
@@ -35,7 +70,9 @@ export default function MetricCards() {
           </div>
         </div>
         <div className="mt-4">
-          <span className="text-3xl font-extrabold text-slate-900">8</span>
+          <span className="text-3xl font-extrabold text-slate-900">
+            {loading ? '...' : metrics.critical_escalations}
+          </span>
           <p className="text-xs font-medium text-rose-600 mt-1 flex items-center gap-1">
             Requires immediate action
           </p>
@@ -53,9 +90,11 @@ export default function MetricCards() {
           </div>
         </div>
         <div className="mt-4">
-          <span className="text-3xl font-extrabold text-slate-900">5</span>
+          <span className="text-3xl font-extrabold text-slate-900">
+            {loading ? '...' : metrics.sla_breaches}
+          </span>
           <p className="text-xs font-medium text-amber-600 mt-1">
-            3 overdue &gt; 24h
+            Overdue tickets
           </p>
         </div>
       </div>
@@ -71,10 +110,12 @@ export default function MetricCards() {
           </div>
         </div>
         <div className="mt-4 flex items-baseline gap-2">
-          <span className="text-3xl font-extrabold text-slate-900">18.4h</span>
+          <span className="text-3xl font-extrabold text-slate-900">
+            {loading ? '...' : `${metrics.avg_resolution_time_hours}h`}
+          </span>
           <span className="inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
             <ArrowDown className="h-3 w-3" />
-            -3.6h last cycle
+            Live DB Avg
           </span>
         </div>
       </div>

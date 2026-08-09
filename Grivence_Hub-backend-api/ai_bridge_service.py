@@ -61,10 +61,10 @@ DEPT_KEYWORDS = {
         "curriculum": 4, "grade": 4, "classroom": 4, "tuition": 3, "scholarship": 4
     },
     "HOSPITALITY": {
-        "visitor": 4, "guest": 4, "lobby": 4, "reception": 4, "housekeeping": 5,
-        "cleaning": 4, "towel": 3, "linen": 3, "hospitality": 5, "hotel": 4,
+        "visitor": 4, "guest": 4, "lobby": 4, "reception": 4, "cleaning": 5,
+        "towel": 3, "linen": 3, "hospitality": 5, "hotel": 4,
         "lounge": 3, "front desk": 4, "welcome": 2, "check-in": 3, "check-out": 3,
-        "laundry service": 3, "housekeeper": 4, "janitor": 4, "dustbin": 2
+        "laundry service": 3, "janitor": 4, "dustbin": 2
     }
 }
 
@@ -264,7 +264,7 @@ def classify_complaint(description: str, is_anonymous: bool = False, image_url: 
     elif best_dept == "ACADEMIC":
         category = "Academic Services & Scheduling"
     elif best_dept == "HOSPITALITY":
-        category = "Hospitality / Housekeeping Services"
+        category = "Hospitality Services"
 
     # ======================================================================
     # D. Confidence Scoring (0.0 to 100.0)

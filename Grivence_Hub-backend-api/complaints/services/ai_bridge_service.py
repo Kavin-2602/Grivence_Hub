@@ -3,7 +3,7 @@ from complaints.models import Department
 def analyse_complaint_text(description):
     """
     Accepts raw description, computes dynamic Category, Auto-assigned Department (model instance),
-    Confidence Score, Priority matrix, and Reasoning text.
+    Confidence Score (0-100 scale), Priority matrix, and Reasoning text.
     """
     text = description.lower()
     
@@ -11,7 +11,7 @@ def analyse_complaint_text(description):
     category = "General"
     dept_code = "ACADEMIC"
     reasoning = "Standard routing based on keywords."
-    confidence = 0.90
+    confidence = 90.0
     
     # Priority matrix items default
     severity = 2
@@ -25,58 +25,62 @@ def analyse_complaint_text(description):
         category = "Food / Safety Hazard"
         dept_code = "CANTEEN"
         reasoning = "Complaint mentions food/dining service in canteen."
-        confidence = 0.95
+        confidence = 95.0
         if any(k in text for k in ["metal", "safety", "poison", "insect", "contamination"]):
             safety_risk = 5
             severity = 5
             urgency = 5
             reasoning = "Critical food safety concern detected."
-            confidence = 0.98
+            confidence = 98.0
 
     # Transport
-    elif any(k in text for k in ["bus", "transport", "route", "driver", "shuttle"]):
+    elif any(k in text for k in ["bus", "transport", "route", "driver", "shuttle", "delayed", "midterm"]):
         category = "Transport"
         dept_code = "TRANSPORT"
         reasoning = "Complaint relates to transport and transit routing."
-        confidence = 0.94
+        confidence = 94.0
         if any(k in text for k in ["accident", "brake", "rash driving", "hazard"]):
             safety_risk = 4
             severity = 4
             urgency = 5
             reasoning = "Safety hazard on transportation route."
-            confidence = 0.97
+            confidence = 97.0
 
     # Hostel
     elif any(k in text for k in ["hostel", "room", "warden", "water", "geyser", "bed"]):
         category = "Hostel"
         dept_code = "HOSTEL"
         reasoning = "Complaint registered under residential hostel services."
-        confidence = 0.96
+        confidence = 96.0
         if any(k in text for k in ["water contamination", "electric shock", "electric hazard"]):
             safety_risk = 5
             severity = 5
             reasoning = "Critical safety risk identified in hostel room."
-            confidence = 0.99
+            confidence = 99.0
 
     # Sports
-    elif any(k in text for k in ["sports", "gym", "ground", "game", "court", "equipment"]):
+    elif any(k in text for k in ["sport", "cricket", "ground", "ball", "bat", "gym"]):
         category = "Sports"
         dept_code = "SPORTS"
-        reasoning = "Relates to campus sports activities or gymnasium facilities."
-        confidence = 0.92
+        reasoning = "Complaint pertains to sports equipment and facilities."
+        confidence = 95.0
 
-    # Housekeeping
-    elif any(k in text for k in ["clean", "sweep", "dustbin", "waste", "garbage", "trash", "housekeeping"]):
-        category = "Housekeeping"
-        dept_code = "HOUSEKEEPING"
-        reasoning = "Complaint assigned to housekeeping for sanitization/cleaning."
-        confidence = 0.93
+    # Hospitality
+    elif any(k in text for k in ["guest house", "hospitality", "lounge", "air conditioning", "ac"]):
+        category = "Hospitality"
+        dept_code = "HOSPITALITY"
+        reasoning = "Complaint registered under campus hospitality and guest services."
+        confidence = 94.0
 
-    # Try to find corresponding Department
-    try:
-        department = Department.objects.get(code=dept_code)
-    except Department.DoesNotExist:
-        department = None
+    # Academic
+    elif any(k in text for k in ["exam", "grade", "marksheet", "professor", "class", "course", "academic"]):
+        category = "Academic"
+        dept_code = "ACADEMIC"
+        reasoning = "Complaint related to academic courses, grading, or examinations."
+        confidence = 97.0
+
+    # Retrieve Department instance from DB
+    department = Department.objects.filter(code=dept_code).first()
 
     return {
         "category": category,
@@ -88,6 +92,6 @@ def analyse_complaint_text(description):
             "urgency": urgency,
             "impact": impact,
             "safety_risk": safety_risk,
-            "recurrence": recurrence,
+            "recurrence": recurrence
         }
     }

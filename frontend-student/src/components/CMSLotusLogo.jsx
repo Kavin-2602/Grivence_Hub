@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Logo({ className = "w-10 h-10" }) {
+export default function CMSLotusLogo({ className = "w-10 h-10" }) {
   return (
     <img 
       src="/logo.svg" 

@@ -25,7 +25,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             'full_name': self.user.full_name,
             'role': self.user.role,
             'department': str(self.user.department.id) if self.user.department else None,
-            'department_code': self.user.department.code if self.user.department else None
+            'department_code': self.user.department.code if self.user.department else None,
+            'department_name': self.user.department.name if self.user.department else None
         }
         return data
 
@@ -67,11 +68,17 @@ class AIAnalyseComplaintView(views.APIView):
             recurrence=analysis['priority_matrix']['recurrence']
         )
         
+        dept_code = analysis['department'].code if analysis['department'] else None
+        confidence = round(analysis['confidence_score'] * 100 if analysis['confidence_score'] <= 1.0 else analysis['confidence_score'], 1)
+
         return Response({
             "category": analysis['category'],
             "department": str(analysis['department'].id) if analysis['department'] else None,
             "department_name": analysis['department'].name if analysis['department'] else None,
-            "confidence_score": analysis['confidence_score'],
+            "department_code": dept_code,
+            "assigned_dept_code": dept_code,
+            "confidence_score": confidence,
+            "ai_confidence_score": confidence,
             "reasoning": analysis['reasoning'],
             "priority": priority,
             "sla_hours_assigned": 4 if priority == "Critical" else (24 if priority == "High" else (72 if priority == "Medium" else 168))
@@ -84,7 +91,7 @@ class ComplaintCreateListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Complaint.objects.all()
+        queryset = Complaint.objects.select_related('student', 'assigned_department').prefetch_related('history', 'history__changed_by', 'feedback').all().order_by('-created_at')
 
         # If user is STUDENT, only return their own complaints (where they aren't anonymous or are the owner)
         if user.role == 'STUDENT':
@@ -241,6 +248,8 @@ class AdminDashboardView(views.APIView):
         })
 
 
+PROOF_REQUIRED_STATUSES = {'Resolution Pending Verification', 'Resolved'}
+
 class ComplaintStatusUpdateView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -255,6 +264,28 @@ class ComplaintStatusUpdateView(views.APIView):
         resolution_notes = request.data.get('resolution_notes')
         remarks = request.data.get('remarks')
 
+        # ── Server-side RLS: DEPT_HEAD can only update their own dept's complaints ──
+        if request.user.role == 'DEPT_HEAD':
+            if not request.user.department or complaint.assigned_department != request.user.department:
+                return Response(
+                    {"error": "Forbidden: you may only update complaints assigned to your department."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        # ── Proof gate: validate from REQUEST body, not stale DB values ────────
+        # Each individual PATCH that moves into a restricted status MUST supply
+        # proof_url and resolution_notes in THIS request — we do NOT inherit them
+        # from prior saves. This prevents a second call (without proof) from
+        # passing because the DB row already has proof from an earlier call.
+        if new_status in PROOF_REQUIRED_STATUSES:
+            if not resolution_proof_url or not resolution_notes:
+                return Response(
+                    {"error": f"'resolution_proof_url' and 'resolution_notes' are required "
+                              f"when transitioning to '{new_status}'."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # Only write proof fields to model if they were provided in this request
         if resolution_proof_url:
             complaint.resolution_proof_url = resolution_proof_url
         if resolution_notes:
@@ -265,7 +296,7 @@ class ComplaintStatusUpdateView(views.APIView):
             pass  # Standard path
 
         try:
-            # Let's save resolution details first so that validation checks in transition service pass
+            # Save resolution details first so that workflow_service validation sees them
             complaint.save()
             transition_complaint_status(complaint, new_status, user=request.user, remarks=remarks)
         except ValidationError as e:
@@ -289,8 +320,8 @@ class CreateStaffView(views.APIView):
             return Response({"error": "email, full_name, and department are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            department = Department.objects.get(id=department_id)
-        except Department.DoesNotExist:
+            department = Department.objects.get(Q(id=department_id) | Q(code=department_id))
+        except (Department.DoesNotExist, ValueError):
             return Response({"error": "Department not found"}, status=status.HTTP_404_NOT_FOUND)
 
         # Generate temporary password

@@ -58,6 +58,7 @@ class FeedbackSerializer(serializers.ModelSerializer):
 class ComplaintSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source='student.full_name', read_only=True)
     assigned_department_name = serializers.CharField(source='assigned_department.name', read_only=True)
+    assigned_department_code = serializers.CharField(source='assigned_department.code', read_only=True)
     history = ComplaintHistorySerializer(many=True, read_only=True)
     feedback = FeedbackSerializer(read_only=True)
 
@@ -66,7 +67,7 @@ class ComplaintSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'ticket_id', 'student', 'student_name', 'title', 'description',
             'category', 'priority', 'status', 'assigned_department', 'assigned_department_name',
-            'is_anonymous', 'image_url', 'resolution_proof_url', 'resolution_notes',
+            'assigned_department_code', 'is_anonymous', 'image_url', 'resolution_proof_url', 'resolution_notes',
             'sla_deadline_at', 'is_sla_breached', 'ai_confidence_score', 'ai_routing_reasoning',
             'created_at', 'updated_at', 'history', 'feedback'
         ]

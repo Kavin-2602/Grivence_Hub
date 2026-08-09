@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import MetricCards from './components/MetricCards';
 import DepartmentTabs from './components/DepartmentTabs';
@@ -7,154 +7,19 @@ import DepartmentControlPanel from './components/DepartmentControlPanel';
 import NotificationsPanel from './components/NotificationsPanel';
 import AddDepartmentHeadModal from './components/AddDepartmentHeadModal';
 import BroadcastSystem from './components/BroadcastSystem';
-
-// Initial Mock Complaints Data
-const initialComplaints = [
-  {
-    id: 'CMS-3921',
-    category: 'Substandard Lunch Quality',
-    description: 'Unfresh vegetables and undercooked rice served in afternoon mess lunch. Multiple students complained of stomach issues.',
-    assignedDept: 'CANTEEN',
-    priority: 'CRITICAL',
-    status: 'In Progress',
-    slaHoursLeft: -2,
-    isSlaOverdue: true,
-    studentName: 'Amit Verma',
-    studentRoll: '2024-EE-45',
-    routingReasoning: 'AI Routing Engine matched text keywords "mess lunch", "undercooked", and "vegetables" with label CANTEEN. (Confidence: 98.2%)',
-    proofs: [{ fileName: 'mess_food_photo.jpg' }],
-    adminComments: [
-      { author: 'System AI', text: 'Auto-routed to Canteen Department.', timestamp: '10:00 AM' }
-    ]
-  },
-  {
-    id: 'CMS-3922',
-    category: 'Route 4 College Bus Delay',
-    description: 'College bus for Route 4 was delayed by 45 minutes without prior notice, making students miss early midterm exams.',
-    assignedDept: 'TRANSPORT',
-    priority: 'HIGH',
-    status: 'AI Analysed',
-    slaHoursLeft: 1.5,
-    isSlaOverdue: false,
-    studentName: 'Sneha Rao',
-    studentRoll: '2023-CS-12',
-    routingReasoning: 'AI Routing Engine matched keywords "College bus", "Route 4", and "delayed" with label TRANSPORT. (Confidence: 96.5%)',
-    proofs: [{ fileName: 'bus_gps_screenshot.png' }],
-    adminComments: []
-  },
-  {
-    id: 'CMS-3923',
-    category: 'Water Outage in Block-C',
-    description: 'Hostel Block-C has had no running water on the 3rd floor since early morning. Restrooms are unusable.',
-    assignedDept: 'HOSTEL',
-    priority: 'CRITICAL',
-    status: 'Assigned',
-    slaHoursLeft: 0.5,
-    isSlaOverdue: false,
-    studentName: 'Aditya Sharma',
-    studentRoll: '2025-ME-89',
-    routingReasoning: 'AI Routing Engine matched keywords "Hostel Block-C", "running water", and "restrooms" with label HOSTEL. (Confidence: 99.1%)',
-    proofs: [{ fileName: 'empty_tap_photo.jpg' }],
-    adminComments: []
-  },
-  {
-    id: 'CMS-3924',
-    category: 'Defective Cricket Kits',
-    description: 'The sports department issued cracked bats and torn leather balls for the inter-college selection matches.',
-    assignedDept: 'SPORTS',
-    priority: 'LOW',
-    status: 'Submitted',
-    slaHoursLeft: 22,
-    isSlaOverdue: false,
-    studentName: 'Vikram Singh',
-    studentRoll: '2023-CE-67',
-    routingReasoning: 'AI Routing Engine matched keywords "sports department", "cracked bats", and "balls" with label SPORTS. (Confidence: 95.0%)',
-    proofs: [],
-    adminComments: []
-  },
-  {
-    id: 'CMS-3925',
-    category: 'Midterm Grade Discrepancy',
-    description: 'CS-301 Midterm exam marksheets distributed today contain typographical errors in the grade calculations for 15 students.',
-    assignedDept: 'ACADEMIC',
-    priority: 'MEDIUM',
-    status: 'In Progress',
-    slaHoursLeft: -5,
-    isSlaOverdue: true,
-    studentName: 'Neha Gupta',
-    studentRoll: '2024-CS-33',
-    routingReasoning: 'AI Routing Engine matched keywords "CS-301", "grade calculations", and "marksheets" with label ACADEMIC. (Confidence: 97.8%)',
-    proofs: [{ fileName: 'marksheet_grades.pdf' }],
-    adminComments: [
-      { author: 'Academic Head', text: 'Initiated review of grader sheets.', timestamp: '11:15 AM' }
-    ]
-  },
-  {
-    id: 'CMS-3926',
-    category: 'Lounge AC Malfunctioning',
-    description: 'The guest house lounge air conditioning is blowing hot air, making it uncomfortable for visiting delegates.',
-    assignedDept: 'HOSPITALITY',
-    priority: 'MEDIUM',
-    status: 'Resolved',
-    slaHoursLeft: 12,
-    isSlaOverdue: false,
-    studentName: 'Rohan Joshi',
-    studentRoll: '2024-HS-02',
-    routingReasoning: 'AI Routing Engine matched keywords "guest house", "air conditioning", and "lounge" with label HOSPITALITY. (Confidence: 94.6%)',
-    proofs: [],
-    adminComments: [
-      { author: 'Hospitality Tech', text: 'Replaced compressor unit.', timestamp: 'Yesterday' }
-    ]
-  }
-];
-
-// Initial Mock Notifications
-const initialNotifications = [
-  {
-    id: 'notif-1',
-    type: 'SLA_BREACH',
-    message: 'Complaint CMS-3921 (Substandard Lunch Quality) has breached the SLA timer. Action required.',
-    timestamp: '5 mins ago',
-    isRead: false
-  },
-  {
-    id: 'notif-2',
-    type: 'AUTO_ESCALATION',
-    message: 'AI Classifier auto-escalated CMS-3923 (Water Outage) to CRITICAL due to health hazard keywords.',
-    timestamp: '20 mins ago',
-    isRead: false
-  },
-  {
-    id: 'notif-3',
-    type: 'ROUTING_UPDATE',
-    message: 'AI routing successfully assigned CMS-3925 to ACADEMIC Department.',
-    timestamp: '1 hour ago',
-    isRead: true
-  }
-];
-
-// Initial Announcements History
-const initialAnnouncements = [
-  {
-    id: 'BC-9812',
-    audience: 'All Students',
-    isUrgent: true,
-    message: 'Maintenance Notice: C-Block Hostel water supply will be suspended on Aug 10 from 9:00 AM to 1:00 PM for pipeline repairs.',
-    timestamp: 'Aug 09, 2026, 10:15 AM'
-  },
-  {
-    id: 'BC-9811',
-    audience: 'Members of Transport',
-    isUrgent: false,
-    message: 'Please note: Bus Route 4 will depart 15 minutes earlier starting tomorrow due to highway construction delays.',
-    timestamp: 'Aug 08, 2026, 02:30 PM'
-  }
-];
+import LoginScreen from './components/LoginScreen';
+import StaffPortal from './components/StaffPortal';
 
 export default function App() {
-  const [complaints, setComplaints] = useState(initialComplaints);
-  const [notifications, setNotifications] = useState(initialNotifications);
-  const [publishedAnnouncements, setPublishedAnnouncements] = useState(initialAnnouncements);
+  const [token, setToken] = useState(() => localStorage.getItem('access_token') || localStorage.getItem('token'));
+  const [user,  setUser]  = useState(() => {
+    try { return JSON.parse(localStorage.getItem('user') || 'null'); }
+    catch (_) { return null; }
+  });
+  const [complaints, setComplaints] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState([]);
+  const [publishedAnnouncements, setPublishedAnnouncements] = useState([]);
 
   // Filters & Drawer State
   const [searchQuery, setSearchQuery] = useState('');
@@ -166,31 +31,210 @@ export default function App() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAddDeptHeadOpen, setIsAddDeptHeadOpen] = useState(false);
 
-  // Add new department head handler (mock log)
-  const handleAddDeptHead = (data) => {
-    console.log('Added department head:', data);
-    alert(`Successfully added ${data.fullName} as Department Head for ${data.department}! Temporary Password: ${data.tempPassword}`);
+  const mapDeptCode = (code, name) => {
+    if (code) return code.toUpperCase();
+    if (!name) return 'CANTEEN';
+    const upperName = name.toUpperCase();
+    if (upperName.includes('TRANSPORT')) return 'TRANSPORT';
+    if (upperName.includes('CANTEEN') || upperName.includes('FOOD')) return 'CANTEEN';
+    if (upperName.includes('HOSTEL')) return 'HOSTEL';
+    if (upperName.includes('SPORTS')) return 'SPORTS';
+    if (upperName.includes('ACADEMIC')) return 'ACADEMIC';
+    if (upperName.includes('HOSPITALITY')) return 'HOSPITALITY';
+    return 'CANTEEN';
   };
 
-  // Update a single complaint's details in App state
-  const handleUpdateComplaint = (updated) => {
-    setComplaints(prev => prev.map(c => c.id === updated.id ? updated : c));
-    if (selectedComplaint && selectedComplaint.id === updated.id) {
-      setSelectedComplaint(updated);
+  const handleSelectDepartment = (dept) => {
+    setSelectedDepartment(dept);
+    setActiveTab(dept);
+  };
+
+  const handleSelectTab = (tab) => {
+    setActiveTab(tab);
+    if (tab !== 'ANNOUNCEMENTS') {
+      setSelectedDepartment(tab);
     }
   };
 
-  // Publish announcement handler
+  // Unified Data Sync Effect with isFetching concurrency guard
+  useEffect(() => {
+    let isMounted = true;
+    let isFetching = false;
+
+    const syncData = async () => {
+      if (isFetching) return;
+      isFetching = true;
+
+      try {
+        let activeTok = localStorage.getItem('access_token') || localStorage.getItem('token');
+
+        // No token — LoginScreen will handle authentication; don't auto-login
+        if (!activeTok) {
+          if (isMounted) setLoading(false);
+          return;
+        }
+
+        let res;
+        try {
+          res = await fetch('/api/v1/complaints/', {
+            headers: { 'Authorization': `Bearer ${activeTok}` }
+          });
+        } catch (fetchErr) {
+          console.warn('Fetch complaints error:', fetchErr);
+          return;
+        }
+
+        // 401 = token expired, force re-login
+        if (res.status === 401) {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          if (isMounted) { setToken(null); setUser(null); }
+          return;
+        }
+
+          if (res && res.ok) {
+            const data = await res.json();
+            const mapped = data.map(item => {
+              const now = new Date();
+              const deadline = item.sla_deadline_at ? new Date(item.sla_deadline_at) : now;
+              const diffHours = Math.round((deadline - now) / (1000 * 3600));
+
+              return {
+                id: item.ticket_id || item.id,
+                db_id: item.id,
+                category: item.category || item.title || 'General',
+                description: item.description || '',
+                assignedDept: mapDeptCode(item.assigned_department_code, item.assigned_department_name),
+                priority: (item.priority || 'MEDIUM').toUpperCase(),
+                status: item.status || 'Submitted',
+                slaHoursLeft: diffHours,
+                isSlaOverdue: Boolean(item.is_sla_breached) || diffHours < 0,
+                studentName: item.student_name || 'Student User',
+                studentRoll: '2026-STU',
+                routingReasoning: item.ai_routing_reasoning || 'AI routing engine processed ticket.',
+                proofs: item.resolution_proof_url ? [{ fileName: item.resolution_proof_url }] : [],
+                adminComments: (item.history || []).map(h => ({
+                  author: h.changed_by_name || 'System AI',
+                  text: h.remarks || `${h.old_status} -> ${h.new_status}`,
+                  timestamp: h.timestamp ? new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently'
+                }))
+              };
+            });
+            if (isMounted) {
+              setComplaints(mapped);
+              setLoading(false);
+            }
+          }
+      } finally {
+        isFetching = false;
+      }
+    };
+
+    syncData();
+    const interval = setInterval(syncData, 5000);
+    const handleFocus = () => syncData();
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
+  const handleUpdateComplaint = async (updated) => {
+    // API-first: do NOT optimistically update state before the server confirms
+    try {
+      const activeTok = token || localStorage.getItem('access_token') || localStorage.getItem('token');
+      const body = {
+        status: updated.status,
+      };
+      if (updated.resolution_proof_url) body.resolution_proof_url = updated.resolution_proof_url;
+      if (updated.resolution_notes)    body.resolution_notes    = updated.resolution_notes;
+
+      const res = await fetch(`/api/v1/complaints/${updated.db_id || updated.id}/status/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': activeTok ? `Bearer ${activeTok}` : ''
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (res.ok) {
+        // Only update local state after server confirms the transition
+        setComplaints(prev => prev.map(c => c.id === updated.id ? updated : c));
+        if (selectedComplaint && selectedComplaint.id === updated.id) {
+          setSelectedComplaint(updated);
+        }
+        return { success: true };
+      } else {
+        // Surface the API error message back to the caller
+        let errMsg = `Server rejected transition (HTTP ${res.status}).`;
+        try {
+          const errData = await res.json();
+          if (errData.error) errMsg = errData.error;
+          else if (errData.detail) errMsg = errData.detail;
+          else if (errData.message) errMsg = errData.message;
+          else errMsg = JSON.stringify(errData);
+        } catch (_) {}
+        return { success: false, error: errMsg };
+      }
+    } catch (err) {
+      console.warn('API status patch error:', err);
+      return { success: false, error: 'Network error — could not reach server.' };
+    }
+  };
+
+  const handleLogin = (newToken, newUser) => {
+    setToken(newToken);
+    setUser(newUser);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken(null);
+    setUser(null);
+    setComplaints([]);
+    setSelectedComplaint(null);
+  };
+
+  const handleAddDeptHead = async (data) => {
+    try {
+      const res = await fetch('/api/v1/admin/staff/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          full_name: data.fullName,
+          email: data.emailId,
+          department: data.department
+        })
+      });
+      const responseData = await res.json();
+      if (res.ok) {
+        alert(`Successfully added ${responseData.user.full_name} as Department Head! Temporary Password: ${responseData.temporary_password}`);
+      } else {
+        alert(`Failed to add staff: ${responseData.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      alert('Network error while adding staff member.');
+    }
+  };
+
   const handlePublishAnnouncement = (announcement) => {
     setPublishedAnnouncements(prev => [announcement, ...prev]);
   };
 
-  // Delete announcement handler
   const handleDeleteAnnouncement = (id) => {
     setPublishedAnnouncements(prev => prev.filter(a => a.id !== id));
   };
 
-  // Notification handlers
   const handleMarkAllRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
   };
@@ -201,35 +245,79 @@ export default function App() {
 
   // Filter complaints based on Search, Dropdown Filter, and Active Tab
   const filteredComplaints = complaints.filter(item => {
-    // 1. Filter by search query (checks ID, category, description, student roll)
+    const query = searchQuery.trim().toLowerCase();
     const matchesSearch = 
-      item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.studentRoll.toLowerCase().includes(searchQuery.toLowerCase());
+      !query ||
+      item.id.toLowerCase().includes(query) ||
+      item.category.toLowerCase().includes(query) ||
+      item.description.toLowerCase().includes(query) ||
+      item.studentRoll.toLowerCase().includes(query);
 
-    // 2. Filter by dropdown department selection (from header)
-    const matchesHeaderDept = 
-      selectedDepartment === 'ALL' || 
-      item.assignedDept === selectedDepartment;
+    const activeDeptFilter = selectedDepartment !== 'ALL' ? selectedDepartment : activeTab;
 
-    // 3. Filter by active tab (matches tab filter)
-    const matchesTabDept = 
-      activeTab === 'ALL' || 
-      item.assignedDept === activeTab;
+    const matchesDept = 
+      activeDeptFilter === 'ALL' || 
+      item.assignedDept === activeDeptFilter;
 
-    return matchesSearch && matchesHeaderDept && matchesTabDept;
+    return matchesSearch && matchesDept;
   });
 
-  return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+  // ── Role-gated rendering ────────────────────────────────────────────────
+  // Enforce strict routing based on the user object
+  if (!token || !user) {
+    if (token && !user) {
+      // Clear stale token if user object is missing
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('token');
+    }
+    return <LoginScreen onLoginSuccess={handleLogin} />;
+  }
+
+  // Handle URL parameters for explicit intent
+  const urlParams = new URLSearchParams(window.location.search);
+  const isStaffUrl = urlParams.get('type') === 'staff';
+  const isAdminUrl = urlParams.get('type') === 'admin';
+
+  // Strict check for DEPT_HEAD
+  if (user.role === 'DEPT_HEAD') {
+    if (isAdminUrl) {
+      // Trying to access Admin portal as Dept Head
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <div className="bg-white p-6 rounded shadow max-w-sm text-center">
+            <h2 className="text-xl font-bold text-rose-600 mb-2">Access Denied</h2>
+            <p className="text-sm text-slate-600 mb-4">You are logged in as a Department Head. You cannot access the Admin Dashboard.</p>
+            <button onClick={handleLogout} className="px-4 py-2 bg-emerald-600 text-white rounded text-sm hover:bg-emerald-700">Logout to switch accounts</button>
+          </div>
+        </div>
+      );
+    }
+    return <StaffPortal token={token} user={user} onLogout={handleLogout} />;
+  }
+
+  // Strict check for ADMIN
+  if (user.role === 'ADMIN') {
+    if (isStaffUrl) {
+      // Trying to access Staff portal as Admin
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <div className="bg-white p-6 rounded shadow max-w-sm text-center">
+            <h2 className="text-xl font-bold text-rose-600 mb-2">Access Denied</h2>
+            <p className="text-sm text-slate-600 mb-4">You are logged in as an Admin. You cannot access the Department Staff Portal.</p>
+            <button onClick={handleLogout} className="px-4 py-2 bg-emerald-600 text-white rounded text-sm hover:bg-emerald-700">Logout to switch accounts</button>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       
       {/* Header Bar */}
       <Header
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         selectedDepartment={selectedDepartment}
-        setSelectedDepartment={setSelectedDepartment}
+        setSelectedDepartment={handleSelectDepartment}
         onBellClick={() => setIsNotificationsOpen(true)}
         unreadCount={notifications.filter(n => !n.isRead).length}
         onAddDeptHeadClick={() => setIsAddDeptHeadOpen(true)}
@@ -240,10 +328,10 @@ export default function App() {
         {activeTab !== 'ANNOUNCEMENTS' ? (
           <>
             {/* KPI Cards Row */}
-            <MetricCards />
+            <MetricCards token={token} />
 
             {/* Department Filter Tabs */}
-            <DepartmentTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+            <DepartmentTabs activeTab={activeTab} setActiveTab={handleSelectTab} />
 
             {/* Split Screen layout: Table / Control Panel */}
             <div className="px-6 py-6 flex flex-col lg:flex-row gap-6 items-start">
@@ -256,7 +344,6 @@ export default function App() {
                   complaints={filteredComplaints}
                   selectedComplaintId={selectedComplaint?.id || null}
                   onSelectComplaint={(complaint) => {
-                    // Toggle selection
                     if (selectedComplaint && selectedComplaint.id === complaint.id) {
                       setSelectedComplaint(null);
                     } else {
@@ -266,7 +353,7 @@ export default function App() {
                 />
               </div>
 
-              {/* Department Control Panel (visible only when row is selected) */}
+              {/* Department Control Panel */}
               {selectedComplaint && (
                 <div className="w-full lg:w-1/3">
                   <DepartmentControlPanel
@@ -281,10 +368,7 @@ export default function App() {
           </>
         ) : (
           <>
-            {/* Department Filter Tabs */}
-            <DepartmentTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-
-            {/* Institutional Broadcast Notice System */}
+            <DepartmentTabs activeTab={activeTab} setActiveTab={handleSelectTab} />
             <BroadcastSystem 
               onPublishAnnouncement={handlePublishAnnouncement}
               publishedAnnouncements={publishedAnnouncements}
@@ -314,9 +398,18 @@ export default function App() {
         <div className="max-w-[1600px] mx-auto px-6">
           <p>© 2026 CMSCE Admin Portal. All rights reserved.</p>
           <p className="mt-1 text-[10px] opacity-70">AI-Powered Routing Engine v1.2.0 • Secured under branch feature/admin-dashboard</p>
-        </div>
       </footer>
+    </div>
+  );
 
+  // If role is neither DEPT_HEAD nor ADMIN
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="bg-white p-6 rounded shadow max-w-sm text-center">
+        <h2 className="text-xl font-bold text-rose-600 mb-2">Access Denied</h2>
+        <p className="text-sm text-slate-600 mb-4">You do not have permission to access this portal.</p>
+        <button onClick={handleLogout} className="px-4 py-2 bg-emerald-600 text-white rounded text-sm hover:bg-emerald-700">Logout</button>
+      </div>
     </div>
   );
 }

@@ -63,7 +63,7 @@ def test_department_routing():
     assert res_academic["assigned_dept_code"] == "ACADEMIC"
     
     # Hospitality test
-    res_hospitality = classify_complaint("Housekeeping cleaning needed for the lobby visitor reception area")
+    res_hospitality = classify_complaint("Hospitality cleaning needed for the lobby visitor reception area")
     assert res_hospitality["assigned_dept_code"] == "HOSPITALITY"
 
 def test_priority_score_boundaries():

@@ -35,6 +35,10 @@ def transition_complaint_status(complaint, new_status, user=None, remarks=None):
                 f"Resolution proof URL and resolution notes are required before transitioning to '{new_status}'."
             )
 
+    if new_status == 'Resolved':
+        from django.utils import timezone
+        complaint.resolved_at = timezone.now()
+
     complaint.status = new_status
     complaint.save()
 

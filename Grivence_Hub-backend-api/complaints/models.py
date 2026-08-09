@@ -62,7 +62,7 @@ class Department(models.Model):
         ('HOSTEL', 'HOSTEL'),
         ('SPORTS', 'SPORTS'),
         ('ACADEMIC', 'ACADEMIC'),
-        ('HOUSEKEEPING', 'HOUSEKEEPING'),
+        ('HOSPITALITY', 'HOSPITALITY'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -123,6 +123,7 @@ class Complaint(models.Model):
     image_url = models.URLField(max_length=500, null=True, blank=True)
     resolution_proof_url = models.URLField(max_length=500, null=True, blank=True)
     resolution_notes = models.TextField(null=True, blank=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
     sla_deadline_at = models.DateTimeField()
     is_sla_breached = models.BooleanField(default=False)
     ai_confidence_score = models.FloatField(default=0.0)
@@ -141,9 +142,12 @@ class Complaint(models.Model):
     def save(self, *args, **kwargs):
         if not self.ticket_id:
             year = timezone.now().year
-            # Let's count existing complaints for this year to generate standard CMP-YYYY-XXXX format
             count = Complaint.objects.filter(created_at__year=year).count() + 1
-            self.ticket_id = f"CMP-{year}-{1000 + count}"
+            candidate_id = f"CMP-{year}-{1000 + count}"
+            while Complaint.objects.filter(ticket_id=candidate_id).exists():
+                count += 1
+                candidate_id = f"CMP-{year}-{1000 + count}"
+            self.ticket_id = candidate_id
         super().save(*args, **kwargs)
 
     def __str__(self):

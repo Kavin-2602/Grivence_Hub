@@ -109,16 +109,16 @@ export default function AddDepartmentHeadModal({ isOpen, onClose, onSave }) {
               />
             </div>
 
-            {/* Email ID */}
+            {/* Staff ID */}
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wider">
-                Email ID <span className="text-rose-500">*</span>
+                Staff ID <span className="text-rose-500">*</span>
               </label>
               <input
-                type="email"
+                type="text"
                 required
                 className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-green/30 focus:border-brand-green text-slate-800 transition-all"
-                placeholder="e.g. rajesh.kumar@cmsce.edu"
+                placeholder="e.g. rajesh_transport"
                 value={emailId}
                 onChange={(e) => setEmailId(e.target.value)}
               />
