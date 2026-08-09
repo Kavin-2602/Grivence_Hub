@@ -11,6 +11,7 @@ export default function LoginScreen({ onLoginSuccess }) {
 
   // Determine login mode from URL params
   const urlParams = new URLSearchParams(window.location.search);
+  const loginMode = urlParams.get('type');
   const isStaff = loginMode === 'staff';
   const titleText = isStaff ? 'Department Staff Login' : 'Admin Login';
   const idLabel = isStaff ? 'Staff ID' : 'Admin ID';
