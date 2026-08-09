@@ -398,9 +398,11 @@ export default function App() {
         <div className="max-w-[1600px] mx-auto px-6">
           <p>© 2026 CMSCE Admin Portal. All rights reserved.</p>
           <p className="mt-1 text-[10px] opacity-70">AI-Powered Routing Engine v1.2.0 • Secured under branch feature/admin-dashboard</p>
+        </div>
       </footer>
     </div>
   );
+  }
 
   // If role is neither DEPT_HEAD nor ADMIN
   return (
