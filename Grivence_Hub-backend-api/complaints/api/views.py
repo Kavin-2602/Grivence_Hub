@@ -320,8 +320,13 @@ class CreateStaffView(views.APIView):
             return Response({"error": "email, full_name, and department are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            department = Department.objects.get(Q(id=department_id) | Q(code=department_id))
-        except (Department.DoesNotExist, ValueError):
+            try:
+                import uuid
+                uuid_val = uuid.UUID(department_id)
+                department = Department.objects.get(Q(id=uuid_val) | Q(code=department_id))
+            except ValueError:
+                department = Department.objects.get(code=department_id)
+        except Department.DoesNotExist:
             return Response({"error": "Department not found"}, status=status.HTTP_404_NOT_FOUND)
 
         # Generate temporary password
